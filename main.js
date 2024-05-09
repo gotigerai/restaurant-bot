@@ -16,8 +16,8 @@ const genAI = new GoogleGenerativeAI(process.env.VITE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro", generationConfig, safetySettings });
 
 const API_ENDPOINTS = {
-  get: import.meta.env.VITE_API_GSHEET_GET,
-  post: import.meta.env.VITE_API_GSHEET_POST,
+  get: process.env.VITE_API_GSHEET_GET,
+  post: process.env.VITE_API_GSHEET_POST,
 };
 
 // Variable global para almacenar datos del spreadsheet
