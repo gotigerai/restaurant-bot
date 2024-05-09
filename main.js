@@ -4,6 +4,12 @@ import { history } from './component/trainingData.js';
 import { generationConfig, safetySettings } from './component/botConfig.js';
 import { autoScrollHistory } from "./component/autoScroll.js";
 import moment from 'moment-timezone';
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 4000; // Usar variable de entorno PORT o un puerto predeterminado
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
 
 // Initialize the model
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_API_KEY}`);
