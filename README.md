@@ -1,9 +1,9 @@
-# Roar google sheet
-Instalar las dependencias de ser necesario con "npm install" y luego levantar servidor local con "npm run dev"
+# Bot para restaurantes
+Instalar las dependencias de ser necesario con "npm install" y luego levantar servidor local con "npm run dev" en la terminal
 
 Google Sheet conectada con este bot: https://docs.google.com/spreadsheets/d/1NzUo2G9RK4mO2FfOg8vSvXu7VTo0GtDRVZ-KggmANdI/edit#gid=0
 
-#main.js
+# main.js
 Aquí tienes un resumen conciso del flujo y funciones del código descrito:
 
 1. **Inicialización del Modelo**:
@@ -26,7 +26,7 @@ Aquí tienes un resumen conciso del flujo y funciones del código descrito:
 Este flujo describe cómo el código facilita una interacción fluida con el chatbot y maneja dinámicamente los datos de una hoja de cálculo en línea, integrando funcionalidades específicas según las respuestas del modelo de AI.
 
 
-#Component/autoScroll.js:
+# Component/autoScroll.js:
 Resumen conciso de la función `autoScrollHistory`:
 
 1. **Localización del Contenedor**: La función busca el contenedor de mensajes del chat por su ID `history-chat-div`.

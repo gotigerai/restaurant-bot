@@ -16,6 +16,9 @@
       <img src="roar_favicon.png" alt="chatbot image" class="w-10 h-10 rounded-lg" />
       <h1 class="text-gemDeep text-lg font-medium">Roar</h1>
     </header>
+
+
+
     <!-- Chat Box -->
     <div class="flex-1 overflow-y-auto" id="history-chat-div">
       <!-- Chat area -->
@@ -25,6 +28,13 @@
     <form action="" method="post" class="p-2 h-fit" id="chat-form">
       <textarea name="prompt" id="prompt" cols="30" rows="4"
         class="w-full p-2 rounded-md resize-none focus:outline-none" placeholder="Enter message here..."></textarea>
+            <!-- Botones de acción rápida -->
+    <div class="p-2 flex gap-4 justify-center">
+      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Ver mensajes</button>
+      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Añadir mensaje</button>
+      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Info del Restaurante</button>
+      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Consejos de Marketing</button>
+    </div>
       <button type="submit" class="w-full p-1 bg-gemDeep rounded text-white">
         Send
       </button>

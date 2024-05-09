@@ -3,6 +3,7 @@ import md from "markdown-it";
 import { history } from './component/trainingData.js';
 import { generationConfig, safetySettings } from './component/botConfig.js';
 import { autoScrollHistory } from "./component/autoScroll.js";
+import moment from 'moment-timezone';
 
 // Initialize the model
 const genAI = new GoogleGenerativeAI(`${import.meta.env.VITE_API_KEY}`);
@@ -17,11 +18,33 @@ const API_ENDPOINTS = {
 // Variable global para almacenar datos del spreadsheet
 let sheetData = null;
 // Inicializa markdown-it con la opción linkify habilitada
-const mdParser = new md({
-  linkify: true,  // Autoconvierte URL-like text a enlaces
-  html: true      // Permite HTML en el output
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  const buttons = document.querySelectorAll('.action-btn');
+  buttons.forEach(button => {
+      button.addEventListener('click', function() {
+          sendPredefinedMessage(this.textContent.trim());
+      });
+  });
 });
 
+function sendPredefinedMessage(message) {
+  const chatArea = document.getElementById("chat-container");
+  const userDiv = `<div class="flex items-center gap-2 justify-start userChat">
+      <img src="user.jpg" alt="user icon" class="w-10 h-10 rounded-full">
+      <p class="bg-gemDeep text-white p-1 rounded-md shadow-md">${message}</p>
+  </div>`;
+  chatArea.innerHTML += userDiv;
+
+  // Simula la entrada del usuario como si hubiera escrito el mensaje
+  getResponse(message).then(aiResponse => {
+      let md_text = md().render(aiResponse);
+      chatArea.innerHTML += aiDiv(md_text);
+      autoScrollHistory(); // Asegúrate de que el historial de chat se desplaza automáticamente hacia abajo
+  });
+}
 
 
 
@@ -58,7 +81,6 @@ async function sheetGet() {
       sheetData = null;
   }
 }
-// F
 // Function para solicitudes con endpoint GET - (END)
 
 
@@ -144,22 +166,31 @@ async function getResponse(prompt) {
 
 // Parseo para los parámetros de POST - (START)
 function parseAddCommand(response) {
-  console.log("Parsing response for /añadir command:", response); // Log para depuración
   const numberPattern = /Número:\s*\**\s*([^\n\r\*]*)\**/i;
   const messagePattern = /Mensaje:\s*\**\s*([^\n\r\*]*)\**/i;
+  const horaPattern = /Hora:\s*\**\s*((?:\d{1,2}:\d{2})(?:\s*AM|PM)?)\**/i;  // Mejorada para capturar formato de hora específico
+  const fechaPattern = /Fecha:\s*\**\s*(\d{2}\/\d{2}\/\d{2})\**/i;  // Mejorada para capturar formato de fecha específico
 
   const numero = (response.match(numberPattern) || [])[1]?.trim();
   const mensaje = (response.match(messagePattern) || [])[1]?.trim();
+  let hora = (response.match(horaPattern) || [])[1]?.trim();
+  let fecha = (response.match(fechaPattern) || [])[1]?.trim();
+
+  // Formatear fecha y hora con moment-timezone
+  fecha = moment.tz(fecha, "DD/MM/YY", "America/New_York").format("DD/MM/YY");
+  hora = moment.tz(hora, "HH:mm", "America/New_York").format("HH:mm");
 
   let data = {
-    Numero: numero,
-    Mensaje: mensaje,
-    error: null
+      Numero: numero,
+      Mensaje: mensaje,
+      Hora: hora,
+      Fecha: fecha,
+      error: null
   };
 
-  if (!numero) { // Verifica si el campo número está presente
-    data.error = "El número es un detalle requerido y está faltando.";
-    return data;
+  if (!numero) {
+      data.error = "El número es un detalle requerido y está faltando.";
+      return data;
   }
 
   return data; // Retorna el objeto data con la información extraída
@@ -254,7 +285,7 @@ export const userDiv = (data) => {
               class="w-10 h-10 rounded-full"
             />
             <p class="bg-gemDeep text-white p-1 rounded-md shadow-md  ">
-            ${mdParser.render(data)}
+            ${(data)}
             </p>
           </div>
   `;
@@ -266,7 +297,7 @@ export const aiDiv = (data) => {
   <!-- AI Chat -->
           <div class="flex gap-2 justify-end aiChat">
             <pre class="bg-gemRegular/40 text-gemDeep p-1 rounded-md shadow-md whitespace-pre-wrap">
-            ${mdParser.render(data)}
+            ${(data)}
             </pre>
             <img
               src="roar_favicon.png"
