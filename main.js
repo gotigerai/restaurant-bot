@@ -3,35 +3,35 @@ import md from "markdown-it";
 import { history } from './component/trainingData.js';
 import { generationConfig, safetySettings } from './component/botConfig.js';
 import { autoScrollHistory } from "./component/autoScroll.js";
-import moment from 'moment-timezone';
-import express from 'express';
-const app = express();
-const PORT = process.env.PORT || 4000; // Usar variable de entorno PORT o un puerto predeterminado
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// Initialize the model
-const genAI = new GoogleGenerativeAI(process.env.VITE_API_KEY);
+import { sheetGet, sheetPost, parsePostData, verMensajes, buscar } from "./component/GET_POST.js";
+// Initialize the model (GEMINI AI v1.0 pro)
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro", generationConfig, safetySettings });
 
-const API_ENDPOINTS = {
-  get: process.env.VITE_API_GSHEET_GET,
-  post: process.env.VITE_API_GSHEET_POST,
-};
-
-// Variable global para almacenar datos del spreadsheet
-let sheetData = null;
-// Inicializa markdown-it con la opción linkify habilitada
 
 
 
-document.addEventListener('DOMContentLoaded', function() {
+// Llama a sincronizaHoja cuando la página se cargue completamente
+window.onload = sincronizaHoja;
+function mensajeDeCarga(message) {
+  const chatArea = document.getElementById("chat-container");
+  chatArea.innerHTML += aiDiv(message);
+}
+
+// Function para sincronizar la hoja de calculo al cargar el BOT
+async function sincronizaHoja() {
+  await sheetGet();
+  // Luego de cargar los datos, muestra un mensaje en el chat
+  mensajeDeCarga("¡El Documento de Google Sheet se ha sincronizado con éxito!,  ¿Desea ver sus Mensajes?");
+}
+
+// Carga Action Buttons cuando se abre el bot - (START)
+document.addEventListener('DOMContentLoaded', function () {
   const buttons = document.querySelectorAll('.action-btn');
   buttons.forEach(button => {
-      button.addEventListener('click', function() {
-          sendPredefinedMessage(this.textContent.trim());
-      });
+    button.addEventListener('click', function () {
+      sendPredefinedMessage(this.textContent.trim());
+    });
   });
 });
 
@@ -45,93 +45,13 @@ function sendPredefinedMessage(message) {
 
   // Simula la entrada del usuario como si hubiera escrito el mensaje
   getResponse(message).then(aiResponse => {
-      let md_text = md().render(aiResponse);
-      chatArea.innerHTML += aiDiv(md_text);
-      autoScrollHistory(); // Asegúrate de que el historial de chat se desplaza automáticamente hacia abajo
+    let md_text = md().render(aiResponse);
+    chatArea.innerHTML += aiDiv(md_text);
+    autoScrollHistory(); // Asegúrate de que el historial de chat se desplaza automáticamente hacia abajo
   });
 }
+// Carga Action Buttons cuando se abre el bot - (END)
 
-
-
-
-// Function para sincronizar la hoja de calculoa l cargar el BOT - (START)
-async function loadDataOnStart() {
-  await sheetGet();
-  // Luego de cargar los datos, muestra un mensaje en el chat
-  displayChatMessage("El Documento de Google Sheet se ha sincronizado con éxito!");
-}
-// Llama a loadDataOnStart cuando la página se cargue completamente
-window.onload = loadDataOnStart;
-function displayChatMessage(message) {
-  const chatArea = document.getElementById("chat-container");
-  chatArea.innerHTML += aiDiv(message);
-}
-// Function para sincronizar la hoja de calculoa l cargar el BOT - (END)
-
-// Function para solicitudes con endpoint GET - (START)
-async function sheetGet() {
-  const endpointUrl = API_ENDPOINTS.get;
-
-  try {
-      const response = await fetch(endpointUrl);
-      if (!response.ok) {
-          console.error('Failed to fetch data:', response.status);
-          sheetData = null;
-          return;
-      }
-      sheetData = await response.json();
-      console.log('Data fetched successfully:', sheetData);
-  } catch (error) {
-      console.error('Error fetching data from the spreadsheet:', error);
-      sheetData = null;
-  }
-}
-// Function para solicitudes con endpoint GET - (END)
-
-
-// Function para solicitudes con endpoint POST - (START)
-async function sheetPost(data) {
-  // Validación de datos
-  function validateData(data) {
-    let errors = [];
-    if (!data.Numero) { // Asegúrate de que 'Numero' está presente
-      errors.push("El campo 'Numero' es obligatorio.");
-    }
-    return errors;
-  }
-
-  const validationErrors = validateData(data);
-  if (validationErrors.length > 0) {
-    return `Error de validación: ${validationErrors.join(" ")}`;
-  }
-
-  // Creando la cadena de consulta a partir de los datos
-  const queryParams = new URLSearchParams(data).toString();
-
-  try {
-    const response = await fetch(`${API_ENDPOINTS.post}?${queryParams}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status} details: ${result.message || 'Unknown error'}`);
-    }
-
-    console.log("Datos enviados con éxito, respuesta del servidor:", result); // Log de la respuesta del servidor
-
-    // Sincronizar nuevamente la hoja de cálculo
-    await sheetGet();
-
-  } catch (error) {
-    console.error('Error al enviar los datos:', error);
-    return `Error al enviar los datos: ${error.message}`;
-  }
-}
-// Function para solicitudes con endpoint POST - (END)
 
 
 
@@ -146,16 +66,16 @@ async function getResponse(prompt) {
 
   // Utiliza una detección más precisa del comando "/añadir"
   if (text.toLowerCase().includes("/añadir") && text.match(/número:\s*\d+/i)) {
-    const data = parseAddCommand(text);
+    const data = parsePostData(text);
     if (data.error) {
       return data.error;  // Muestra mensaje de error si no se extraen correctamente los datos
     }
     return await sheetPost(data);  // Llama a sheetPost si se extraen correctamente
   } else if (text.toLowerCase().includes("/mensajes")) {
-    return await handleMessagesCommand();
+    return await verMensajes();
   } else if (text.toLowerCase().includes("/buscar")) {
     const searchTerm = text.split("/buscar")[1].trim();
-    const searchResults = searchInSheetData(searchTerm);
+    const searchResults = buscar(searchTerm);
     if (searchResults.length > 0) {
       const formattedResults = searchResults.map(entry => JSON.stringify(entry)).join("\n");
       return `Resultados encontrados: \n${formattedResults}`;
@@ -169,68 +89,6 @@ async function getResponse(prompt) {
 // GET RESPONSE - (END)
 
 
-// Parseo para los parámetros de POST - (START)
-function parseAddCommand(response) {
-  const numberPattern = /Número:\s*\**\s*([^\n\r\*]*)\**/i;
-  const messagePattern = /Mensaje:\s*\**\s*([^\n\r\*]*)\**/i;
-  const horaPattern = /Hora:\s*\**\s*((?:\d{1,2}:\d{2})(?:\s*AM|PM)?)\**/i;  // Mejorada para capturar formato de hora específico
-  const fechaPattern = /Fecha:\s*\**\s*(\d{2}\/\d{2}\/\d{2})\**/i;  // Mejorada para capturar formato de fecha específico
-
-  const numero = (response.match(numberPattern) || [])[1]?.trim();
-  const mensaje = (response.match(messagePattern) || [])[1]?.trim();
-  let hora = (response.match(horaPattern) || [])[1]?.trim();
-  let fecha = (response.match(fechaPattern) || [])[1]?.trim();
-
-  // Formatear fecha y hora con moment-timezone
-  fecha = moment.tz(fecha, "DD/MM/YY", "America/New_York").format("DD/MM/YY");
-  hora = moment.tz(hora, "HH:mm", "America/New_York").format("HH:mm");
-
-  let data = {
-      Numero: numero,
-      Mensaje: mensaje,
-      Hora: hora,
-      Fecha: fecha,
-      error: null
-  };
-
-  if (!numero) {
-      data.error = "El número es un detalle requerido y está faltando.";
-      return data;
-  }
-
-  return data; // Retorna el objeto data con la información extraída
-}
-// Parseo para los parámetros de POST - (END)
-
-
-
-// Función para manejar el comando /Mensajes
-async function handleMessagesCommand() {
-  await sheetGet();
-  if (sheetData && sheetData.length > 0) {
-      const formattedResults = sheetData.map(entry => `Número: ${entry.Numero}, Mensaje: ${entry.Mensaje}`).join("\n");
-      return `Aquí están tus mensajes:\n${formattedResults}`;
-  } else {
-      return "No se encontraron mensajes.";
-  }
-}
-
-// Función para manejar el comando /Buscar
-function searchInSheetData(searchTerm) {
-  const results = [];
-  // Asegúrate de que sheetData no está vacío y searchTerm no es nulo
-  if (sheetData && searchTerm) {
-    sheetData.forEach(entry => {
-      // Busca en cada campo del objeto
-      Object.values(entry).forEach(value => {
-        if (value.toString().toLowerCase().includes(searchTerm.toLowerCase())) {
-          results.push(entry);
-        }
-      });
-    });
-  }
-  return results;
-}
 
 
 // handleSubmit function
