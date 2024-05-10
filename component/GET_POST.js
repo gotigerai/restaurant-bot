@@ -22,7 +22,7 @@ async function sheetGet() {
             return;
         }
         sheetData = await response.json();
-        console.log('Data fetched successfully:', sheetData);
+        console.log('Solicitud GET Exitosa:', sheetData);
     } catch (error) {
         console.error('Error fetching data from the spreadsheet:', error);
         sheetData = null;
@@ -63,7 +63,7 @@ async function sheetPost(data) {
             throw new Error(`HTTP error! status: ${response.status} details: ${result.message || 'Unknown error'}`);
         }
 
-        console.log("Datos enviados con éxito, respuesta del servidor:", result); // Log de la respuesta del servidor
+        console.log("Solicitud POST Exitosa, datos enviados al servidor:", result); // Log de la respuesta del servidor
 
         // Sincronizar nuevamente la hoja de cálculo
         await sheetGet();
@@ -81,40 +81,42 @@ async function sheetPost(data) {
 
 
 // *****PARSEO DE PARAMETROS POST Y COMANDOS: /MENSAJES /BUSCAR*****
-
-// Parseo para los parámetros de POST - (START)
 function parsePostData(response) {
-    const numberPattern = /Número:\s*\**\s*([^\n\r\*]*)\**/i;
-    const messagePattern = /Mensaje:\s*\**\s*([^\n\r\*]*)\**/i;
-    const horaPattern = /Hora:\s*\**\s*((?:\d{1,2}:\d{2})(?:\s*AM|PM)?)\**/i;
-    const fechaPattern = /Fecha:\s*\**\s*(\d{2}\/\d{2}\/\d{4})\**/i;
+    const numberPattern = /Número:\s*(\d+)/i;
+    const fechaPattern = /Fecha:\s*([\d\/]+)/i;
+    // Ajuste para capturar la hora en formatos de 24 horas o con AM/PM
+    const horaPattern = /Hora:\s*(\d{1,2}:\d{2}\s*(?:AM|PM)?)\s*/i;
+    const messagePattern = /Mensaje:\s*([\s\S]*?);/i;
 
     const numero = (response.match(numberPattern) || [])[1]?.trim();
-    const mensaje = (response.match(messagePattern) || [])[1]?.trim();
-    let hora = (response.match(horaPattern) || [])[1]?.trim();
-    let fecha = (response.match(fechaPattern) || [])[1]?.trim();
+    const fechaRaw = (response.match(fechaPattern) || [])[1]?.trim();
+    const horaRaw = (response.match(horaPattern) || [])[1]?.trim();
+    let mensaje = (response.match(messagePattern) || [])[1]?.trim();
 
-    console.log("Extracted Fecha:", fecha);
-    console.log("Extracted Hora:", hora);
-
-    // Convertir fecha y hora a la zona horaria de México
-    let fechaHora = moment.tz(`${fecha} ${hora}`, "DD/MM/YYYY HH:mm", "America/Mexico_City");
-    if (!fechaHora.isValid()) {
-        console.error("Invalid date or time provided:", fecha, hora);
-        return { error: "Fecha u hora inválida proporcionada." };
+    // Validación y formateo de la fecha
+    let fecha = moment(fechaRaw, ["DD-MM-YYYY", "DD/MM/YYYY", "DD-MM-YY", "DD/MM/YY"], true);
+    if (!fecha.isValid()) {
+        console.error("Invalid date provided:", fechaRaw);
+        return { error: "Fecha inválida." };
     }
 
-    fecha = fechaHora.format("DD/MM/YYYY");
-    hora = fechaHora.format("HH:mm");
+    // Validación y formateo de la hora
+    let hora = moment(horaRaw, ["h:mm A", "H:mm"], true);  // Formatos 12 y 24 horas
+    if (!hora.isValid()) {
+        console.error("Invalid time provided:", horaRaw);
+        return { error: "Hora inválida." };
+    }
 
-    console.log("Fecha convertida:", fecha);
-    console.log("Hora convertida:", hora);
+    console.log("Extracted Numero:", numero);
+    console.log("Extracted Mensaje:", mensaje);
+    console.log("Extracted Fecha:", fecha.format("DD/MM/YYYY"));
+    console.log("Extracted Hora:", hora.format("HH:mm"));  // Formato de 24 horas
 
     let data = {
         Numero: numero,
         Mensaje: mensaje,
-        Hora: hora,
-        Fecha: fecha,
+        Hora: hora.format("HH:mm"),  // Usar formato de 24 horas
+        Fecha: fecha.format("DD/MM/YYYY"),
         error: null
     };
 
@@ -122,10 +124,24 @@ function parsePostData(response) {
         data.error = "El número es un detalle requerido y está faltando.";
         return data;
     }
-
-    return data; // Retorna el objeto data con la información extraída
+    if (!mensaje) {
+        data.error = "Mensaje inválido o faltante";
+        return data;
+    }
+    if (!fechaRaw) {
+        data.error = "Fecha inválida o faltante";
+        return data;
+    }
+    if (!horaRaw) {
+        data.error = "Hora inválida o faltante";
+        return data;
+    }
+    console.log("Parseo de DATA:", data);
+    return data; // Retorna el objeto data con la información extraída del parseo (Numero, Mensaje, Hora, Fecha)
 }
-// Parseo para los parámetros de POST - (END)
+
+
+
 
 
 // Función para manejar el comando /Mensajes (START)

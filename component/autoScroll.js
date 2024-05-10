@@ -15,7 +15,7 @@ function autoScrollHistory() {
 
   // Obtener todos los mensajes del usuario usando la clase `userChat`
   const userMessages = chatbox.getElementsByClassName("userChat");  // Asegúrate de que la clase esté correctamente escrita
-  console.log("Número de mensajes de usuario encontrados:", userMessages.length);
+  console.log("autoScroll Activado, Mensajes encontrados N°:",userMessages.length);
 
   // Continuar solo si hay mensajes del usuario disponibles
   if (userMessages.length > 0) {

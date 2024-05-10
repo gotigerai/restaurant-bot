@@ -22,20 +22,21 @@ function mensajeDeCarga(message) {
 async function sincronizaHoja() {
   await sheetGet();
   // Luego de cargar los datos, muestra un mensaje en el chat
-  mensajeDeCarga("¡El Documento de Google Sheet se ha sincronizado con éxito!,  ¿Desea ver sus Mensajes?");
+  mensajeDeCarga("<b>¡El Documento de Google Sheet se ha sincronizado con éxito!<b>");
 }
+
 
 // Carga Action Buttons cuando se abre el bot - (START)
 document.addEventListener('DOMContentLoaded', function () {
   const buttons = document.querySelectorAll('.action-btn');
   buttons.forEach(button => {
     button.addEventListener('click', function () {
-      sendPredefinedMessage(this.textContent.trim());
+      sendTextButton(this.textContent.trim());
     });
   });
 });
 
-function sendPredefinedMessage(message) {
+function sendTextButton(message) {
   const chatArea = document.getElementById("chat-container");
   const userDiv = `<div class="flex items-center gap-2 justify-start userChat">
       <img src="user.jpg" alt="user icon" class="w-10 h-10 rounded-full">
@@ -47,25 +48,29 @@ function sendPredefinedMessage(message) {
   getResponse(message).then(aiResponse => {
     let md_text = md().render(aiResponse);
     chatArea.innerHTML += aiDiv(md_text);
-    autoScrollHistory(); // Asegúrate de que el historial de chat se desplaza automáticamente hacia abajo
+    // Llama la Function de autoScroll desde /component
+    autoScrollHistory();
   });
 }
 // Carga Action Buttons cuando se abre el bot - (END)
 
 
-
-
 // GET RESPONSE - (START)
 async function getResponse(prompt) {
+  // Inicia conversacion con el MODELO AI
   const chat = await model.startChat({ history: history });
+  // Envia mensaje del usuario (prompt) al MODELO AI
   const result = await chat.sendMessage(prompt);
+  // Extrae la repuesta del MODELO AI en "const response"
   const response = await result.response;
+  // Convierte la repuesta del MODELO AI en formato texto y la guarda en "const text"
   const text = response.text();
 
-  console.log("AI Response Text:", text); // Continúa con el log para ver la respuesta.
+  console.log("AI BOT:", text); // Continúa con el log para ver la respuesta.
 
-  // Utiliza una detección más precisa del comando "/añadir"
+
   if (text.toLowerCase().includes("/añadir") && text.match(/número:\s*\d+/i)) {
+    console.log("comando añadir y numero detectado");
     const data = parsePostData(text);
     if (data.error) {
       return data.error;  // Muestra mensaje de error si no se extraen correctamente los datos
@@ -89,8 +94,6 @@ async function getResponse(prompt) {
 // GET RESPONSE - (END)
 
 
-
-
 // handleSubmit function
 async function handleSubmit(event) {
   event.preventDefault();
@@ -102,39 +105,50 @@ async function handleSubmit(event) {
   if (prompt === "") {
     return;
   }
-
-  console.log("usermessage", prompt);
+  console.log("USUARIO:", prompt);
 
   chatArea.innerHTML += userDiv(prompt);
   userMessage.value = "";
-  const aiResponse = await getResponse(prompt);
-  let md_text = md().render(aiResponse);
-  chatArea.innerHTML += aiDiv(md_text);
 
-  let newUserRole = {
-    role: "user",
-    parts: prompt,
-  };
-  let newAIRole = {
-    role: "model",
-    parts: aiResponse,
-  };
+  try {
+    const aiResponse = await getResponse(prompt);  // Asumiendo que esto devuelve un objeto
 
-  history.push(newUserRole);
-  history.push(newAIRole);
-  console.log(history);
+    // Asegurarse de que la respuesta de la AI es una cadena
+    let responseText = typeof aiResponse === 'string' ? aiResponse : JSON.stringify(aiResponse);
 
-  // Llama la Function de autoScroll desde /component
-  autoScrollHistory();
+    let md_text = md().render(responseText); // Renderiza como Markdown solo si es una cadena
+    chatArea.innerHTML += aiDiv(md_text);
+
+    let newUserRole = {
+      role: "user",
+      parts: prompt,
+    };
+    let newAIRole = {
+      role: "model",
+      parts: responseText,  // Asegurarse de pasar texto
+    };
+
+    history.push(newUserRole);
+    history.push(newAIRole);
+    console.log("Historial Actual:", history);
+
+    // Llama la Function de autoScroll desde /component
+    autoScrollHistory();
+  } catch (error) {
+    console.error("Error al procesar la respuesta:", error);
+    // Considerar mostrar algún mensaje de error en el chat
+    chatArea.innerHTML += userDiv("Error al procesar su mensaje, intente de nuevo.");
+  }
 }
+
 
 const chatForm = document.getElementById("chat-form");
 chatForm.addEventListener("submit", handleSubmit);
 
 chatForm.addEventListener("keyup", (event) => {
   if (event.keyCode === 13) handleSubmit(event);
-});
-
+}
+);
 
 
 // user chat div
@@ -153,7 +167,6 @@ export const userDiv = (data) => {
           </div>
   `;
 };
-
 // AI Chat div
 export const aiDiv = (data) => {
   return `
