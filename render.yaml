@@ -1,0 +1,14 @@
+services:
+- type: web
+  name: restaurant-bot-v1.0
+  env: node
+  plan: free
+  buildCommand: npm install
+  startCommand: npm start
+  envVars:
+    - key: NODE_VERSION
+      value: 20.12
+    - key: PORT
+      value: 10000
+  regions:
+    - ohio
