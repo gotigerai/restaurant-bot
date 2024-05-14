@@ -9,9 +9,7 @@ const genAI = new GoogleGenerativeAI(import.meta.env.VITE_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro", generationConfig, safetySettings });
 
 
-
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const añadirMensajeBtn = document.getElementById('añadirMensajeBtn');
   const numeroSelector = document.getElementById('numeroSelector');
   const promptTextArea = document.getElementById('prompt');
@@ -69,6 +67,14 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("Modo captura de datos desactivado");
   }
 
+  // Listener para la tecla Esc y salir del modo captura
+  document.addEventListener('keydown', (event) => {
+    if (event.key === "Escape" && activeMode) {
+      resetCaptureMode();
+      console.log("Salida del modo captura de datos por tecla Esc");
+    }
+  });
+  
   // Listener para activar el modo de captura de datos
   añadirMensajeBtn.addEventListener('click', () => {
     updateSelector();
@@ -108,13 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
       event.preventDefault();
       handleDataSubmission();
     }
+
   });
+
 });
-
-
-
-
-
 
 
 
@@ -134,24 +137,12 @@ async function getResponse(prompt) {
 
   // console.log("AI BOT:", text);
 
- if (text.toLowerCase().includes("/mensajes")) {
+  if (text.toLowerCase().includes("/mensajes")) {
     return await verMensajes()
   }
   return text; // Devuelve la respuesta normal si no se activa ningún comando específico
 }
 // GET RESPONSE - (END)
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Llama a sincronizaHoja cuando la página se cargue completamente
@@ -196,9 +187,6 @@ function sendTextButton(message) {
   });
 }
 // Carga Action Buttons cuando se abre el bot - (END)
-
-
-
 
 
 // handleSubmit function
