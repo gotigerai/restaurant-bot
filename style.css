@@ -7,6 +7,16 @@
 2. Allow adding a border to an element by just adding a border-width. (https://github.com/tailwindcss/tailwindcss/pull/116)
 */
 
+/* Selector de "Añadir Mensaje" */
+.highlight-selector {
+  border: 2px solid red;
+  background-color: #f0f0f0;
+}
+
+#numeroSelector {
+  display: none;
+}
+
 *,
 ::before,
 ::after {

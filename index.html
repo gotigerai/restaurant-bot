@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/roar_favicon.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Roar Chatbot v2.0</title>
+  <title>Bot Restaurantero v1.0</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -26,15 +26,28 @@
     </div>
     <!-- prompt -->
     <form action="" method="post" class="p-2 h-fit" id="chat-form">
+     
       <textarea name="prompt" id="prompt" cols="30" rows="4"
         class="w-full p-2 rounded-md resize-none focus:outline-none" placeholder="Enter message here..."></textarea>
-            <!-- Botones de acción rápida -->
-    <div class="p-2 flex gap-4 justify-center">
-      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Ver mensajes</button>
-      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Añadir mensaje</button>
-      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Info del Restaurante</button>
-      <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Consejos de Marketing</button>
-    </div>
+
+      <!-- Botones de acción rápida -->
+      <div id="verMensajesBtn" class="p-2 flex gap-4 justify-center">
+        <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Ver
+          mensajes</button>
+
+        <button id="añadirMensajeBtn" type="button"
+          class="bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Añadir mensaje</button>
+
+        <select id="numeroSelector" class="bg-gemDeep text-white px-4 py-2 rounded shadow">
+          <!-- Opciones del selector se llenarán dinámicamente -->
+        </select>
+
+        <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Info del
+          Restaurante</button>
+
+        <button class="action-btn bg-gemDeep text-white px-4 py-2 rounded shadow hover:bg-blue-400">Crear mensaje
+          Promocional</button>
+      </div>
       <button type="submit" class="w-full p-1 bg-gemDeep rounded text-white">
         Send
       </button>
